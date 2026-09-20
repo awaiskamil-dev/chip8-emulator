@@ -1,21 +1,89 @@
-#include <iostream>
 #include "Chip8.h"
 #include "Display.h"
 #include "Input.h"
+#include "Frontend.h"
+#include <SFML/System/Clock.hpp>
+#include <cstdlib>
+#include <exception>
+#include <iostream>
+#include <string>
 
-int main()
+void printUsage()
 {
-    // Integration -- do this together after the other functions are ready.
-    // 1. Make a Chip8 object and read the ROM path.
-    // 2. Call chip8.load(path); stop if it returns false.
-    // 3. Make an SFML RenderWindow and pass it to setupGraphics(window).
-    // 4. While the window is open:
-    //    - Call handleInput(window, chip8).
-    //    - Call chip8.emulate_cycle() at the chosen CPU speed.
-    //    - Call chip8.update_timers() at 60 Hz, even while waiting for a key.
-    //    - If drawFlag is true, call drawGraphics(window, chip8), then clear it.
-    //    - Use chip8.sound_active() when adding sound.
+    std::cout << "Usage: chip8 [ROM.ch8] [--debug] [--paused] [--hz 100..2000]\n"
+              << "F1: Play/Debug  Space: Pause  F2: Step  F5: Reset  Esc: Close\n"
+              << "+/-: CPU speed  Keypad: 1234 / QWER / ASDF / ZXCV\n";
+}
 
-    std::cout << "CHIP-8 starter. Emulator code is still TODO.\n";
+int main(int argc, char* argv[])
+{
+    FrontendState state;
+    for (int i = 1; i < argc; ++i) {
+        std::string argument = argv[i];
+        if (argument == "--help" || argument == "-h") {
+            printUsage();
+            return 0;
+        } else if (argument == "--debug") {
+            state.debugMode = true;
+        } else if (argument == "--paused") {
+            state.paused = true;
+        } else if (argument == "--hz") {
+            if (i + 1 >= argc) {
+                std::cerr << "--hz needs a number between 100 and 2000.\n";
+                return 1;
+            }
+            char* end = nullptr;
+            long speed = std::strtol(argv[++i], &end, 10);
+            if (end == argv[i] || *end != '\0' || speed < 100 || speed > 2000) {
+                std::cerr << "CPU speed must be between 100 and 2000.\n";
+                return 1;
+            }
+            state.cpuHz = static_cast<int>(speed);
+        } else if (argument.empty() || argument[0] == '-' || !state.romPath.empty()) {
+            std::cerr << "Unexpected argument: " << argument << '\n';
+            printUsage();
+            return 1;
+        } else {
+            state.romPath = argument;
+        }
+    }
+
+    try {
+        Chip8 chip8;
+        if (!state.romPath.empty()) {
+            if (!loadCurrentRom(chip8, state)) {
+                return 1;
+            }
+        } else {
+            // A no-ROM window is useful for explaining the debugger at a demo.
+            state.debugMode = true;
+            state.message = "NO ROM LOADED. START WITH A ROM FILE PATH.";
+            printUsage();
+        }
+
+        Display display;
+        if (!display.setupGraphics()) {
+            return 1;
+        }
+        Input input;
+        sf::RenderWindow& window = display.getWindow();
+        state.focused = window.hasFocus();
+        sf::Clock clock;
+
+        while (window.isOpen()) {
+            double elapsedSeconds = clock.restart().asSeconds();
+            input.handleInput(window, chip8, state);
+            if (!window.isOpen()) {
+                break;
+            }
+            updateEmulation(chip8, state, elapsedSeconds);
+            display.render(chip8, state);
+            // Always render the UI, even when no new game pixels were drawn.
+            chip8.drawFlag = false;
+        }
+    } catch (const std::exception& error) {
+        std::cerr << "Frontend error: " << error.what() << '\n';
+        return 1;
+    }
     return 0;
 }

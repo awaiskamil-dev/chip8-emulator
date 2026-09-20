@@ -1,88 +1,122 @@
-# CHIP-8 starter
+# CHIP-8 emulator + SFML frontend
 
-A simple scaffold for Awais and Partner. You will implement the emulator yourselves. Most functions contain only TODO comments; `load()` returns false until you implement it. The current program only prints a starter message.
+This project uses your existing CHIP-8 core with an SFML 3 frontend. Play Mode shows the game; Debug Mode shows the same game alongside the live CPU state and keypad.
 
-Style reference: [James Griffin's CHIP-8 emulator](https://github.com/JamesGriffin/CHIP-8-Emulator). We use SFML for graphics and input, and keep separate files so you can work independently.
+The frontend does not implement any opcodes. It reads `gfx`, `V`, `key`, `pc`, `I`, `sp`, `opcode`, and the timers from your existing `Chip8` object. The core files and their public interface were left unchanged.
 
-## Files to work on
+## Build and run on this machine
 
-| File | Owner | Work |
-| --- | --- | --- |
-| `src/Chip8.h` | Both | Shared variables and function declarations; agree before editing |
-| `src/Chip8.cpp` | Awais | Initialization, arithmetic, drawing, keypad instructions |
-| `src/Chip8Execution.cpp` | Partner | Fetch/decode, flow control, stack operations, random |
-| `src/Chip8Memory.cpp` | Partner | ROM loading and memory/index instructions |
-| `src/Chip8Timers.cpp` | Partner | Timer instructions and 60 Hz updates |
-| `src/Display.h/.cpp` | Awais | SFML window setup and drawing |
-| `src/Input.h/.cpp` | Awais | SFML events and keyboard mapping |
-| `src/main.cpp` | Both | Connect everything and write the main loop |
-| `roms/` | Both | Put your `.ch8` files here |
+SFML **3.0.2** and MinGW are already installed under `C:\msys64\mingw64`. These commands use that toolchain (not an SFML 2 tutorial or an MSVC-built library).
 
-## Simple syntax
+From the project folder in PowerShell:
 
-- `uint8_t` holds a number from 0 to 255. `uint16_t` holds a number from 0 to 65535.
-- `V[16]`, `memory[4096]`, `gfx[64 * 32]` and `key[16]` are ordinary arrays.
-- `= {0}` starts an array with every element zero. `init()` still needs to reset state and install the font.
-- `Chip8::arithmetic()` means the function belongs to the `Chip8` class. All the `Chip8*.cpp` files share the same class members.
-- `load(const char* file_path)` accepts a file path such as `"roms/pong.ch8"` and returns true or false.
-- `Chip8& chip8` passes the existing object to a function, so Input can update its keys. `const Chip8&` lets Display read the object.
+```powershell
+New-Item -ItemType Directory -Force build
+g++ -std=c++17 -Wall -Wextra -Wpedantic src/*.cpp -o build/chip8.exe -lsfml-graphics -lsfml-window -lsfml-system
+./build/chip8.exe "roms/your-game.ch8"
+```
 
-No custom type aliases or exceptions are needed. Use ordinary loops, `if` statements and `switch` statements to fill in the TODOs.
+Replace the example path with your own ROM. No game ROMs are bundled.
 
-## Connecting the instruction functions
+```powershell
+# Open directly in Debug Mode, paused before the first instruction:
+./build/chip8.exe "roms/your-game.ch8" --debug --paused
 
-Partner writes the fetch and switch/if logic inside `emulate_cycle()`. Store the fetched instruction in `opcode`, then call exactly one function from this table. Each function reads that same `opcode` to select its instruction and operands.
+# Choose a CPU rate (instructions per second):
+./build/chip8.exe "roms/your-game.ch8" --hz 900
 
-| Function | Instructions |
+# Inspect the frontend without a ROM, or print help:
+./build/chip8.exe
+./build/chip8.exe --help
+```
+
+An invalid ROM path prints an error and exits. Launching without a ROM opens the debugger with a clear no-ROM message; pressing F5 in that state is harmless. Supply a ROM path when starting the application to play.
+
+If `g++` or SFML DLLs are not found, put `C:\msys64\mingw64\bin` on your terminal's PATH. Keep the SFML/compiler toolchains matched. The executable depends on the installed SFML/runtime DLLs; the `.exe` alone is not a standalone distributable.
+
+## Controls
+
+| Key | Action |
 | --- | --- |
-| `arithmetic()` | 6XNN, 7XNN, 8XY0, 8XY1, 8XY2, 8XY3, 8XY4, 8XY5, 8XY6, 8XY7, 8XYE |
-| `drawing()` | 00E0, DXYN |
-| `keypad()` | EX9E, EXA1, FX0A |
-| `flow_control()` | 1NNN, 2NNN, 00EE, 3XNN, 4XNN, 5XY0, 9XY0, BNNN |
-| `random_number()` | CXNN |
-| `memory_instructions()` | ANNN, FX1E, FX29, FX33, FX55, FX65 |
-| `timer_instructions()` | FX07, FX15, FX18 |
+| F1 | Switch Play / Debug layout; keeps the current program and CPU state |
+| Space | Pause / resume |
+| F2 | Execute exactly one normal CPU cycle while paused |
+| F5 | Reload the same ROM using the existing `load()` / `init()`; preserve mode and pause setting |
+| Esc | Close the window |
+| + / - | Change CPU rate by 100 Hz, limited to 100-2000 Hz |
 
-Check the full instruction pattern: for example, the F instructions belong to three different functions. Report unsupported instructions instead of running an unrelated function.
-
-## Rules you both follow
-
-- `load()` calls Awais's `init()` before loading a game. ROMs start at `0x200`; the font starts at `0x050`, with 5 bytes per character.
-- Each instruction updates `pc` itself. Ordinary instructions add 2; a taken skip adds 4. `emulate_cycle()` does not also advance it.
-- CALL saves the current `pc`; RETURN restores it and adds 2. `sp` is the next free stack slot. Ordinary jumps do not use the stack.
-- FX0A leaves `pc` unchanged if no key is held. Return to the main loop while waiting. If several keys are held, choose the lowest key index.
-- Main calls `update_timers()` at 60 Hz, independently of CPU speed. It continues during a key wait and never changes `pc`.
-- Display reads `gfx[y * 64 + x]`. Initialization, clearing and drawing set `drawFlag`; main clears it after rendering.
-- Input updates `chip8.key[index]` directly: 1 for pressed, 0 for released.
-- Check memory, stack and key indices before using them. Print an error and stop emulation for invalid accesses.
-
-Keep the earlier compatibility choices: shifts use Vx; BNNN uses V0; FX55/FX65 leave I unchanged; FX1E leaves VF unchanged; sprites wrap at both edges. Read arithmetic operands before writing the result and then VF. Logic operations do not separately clear VF.
-
-## SFML and keyboard
-
-Main will own one `sf::RenderWindow`. Pass it to `setupGraphics()`, `drawGraphics()` and `handleInput()`. The declarations in the headers allow the empty functions to compile before SFML is installed. Add the SFML includes and CMake dependency when you start that work.
+The main keyboard's `=` key also increases speed without needing Shift; numpad +/- work too. Holding F2 does not repeat steps: release and press it again.
 
 ```text
-Keyboard                CHIP-8 keys
+Physical keyboard       CHIP-8 key
 1 2 3 4                 1 2 3 C
 Q W E R                 4 5 6 D
 A S D F                 7 8 9 E
 Z X C V                 A 0 B F
 ```
 
-## Build
+Debug Mode highlights the real `key[16]` entries. The small character on each tile is its physical keyboard key. Mappings use physical key positions (scancodes).
 
-From PowerShell with the available MinGW compiler:
+## What each frontend file does
+
+| File | Responsibility |
+| --- | --- |
+| `src/Display.h/.cpp` | Own the window; render the existing framebuffer, Play/Debug layouts, registers, keypad, last fetched opcode and timers |
+| `src/Input.h/.cpp` | Handle SFML events, write physical key states into `chip8.key`, and request UI actions |
+| `src/Frontend.h/.cpp` | Small frontend settings structure and helpers for scheduling core calls / reloading a ROM |
+| `src/main.cpp` | Read arguments, create the one core object, then process input, update emulation and render |
+| `CMakeLists.txt` | Build with SFML 3; optionally build integration tests |
+| `tests/FrontendTests.cpp` | Exercise frontend controls/timing and generate layout screenshots |
+
+`FrontendState` only stores UI settings, the ROM path, messages and timing fractions. It does not copy registers, memory, pixels or keypad state. `Display` takes a read-only reference to `Chip8`.
+
+The existing core ownership stays the same: Awais's initialization/arithmetic/drawing/keypad code is in `Chip8.cpp`; Mustafa's cycle, flow-control, ROM/memory and timer code is in the other `Chip8*.cpp` files.
+
+## Timing and display behavior
+
+- Default CPU speed is 700 instructions/second. Rendering is capped at 60 frames/second; a frame can execute several instructions.
+- Timer scheduling calls the existing `update_timers()` at 60 Hz, independently of CPU speed. The core still performs the decrements.
+- Explicit pause freezes CPU execution and timers. F2 steps the CPU only, leaving timers frozen for predictable debugging.
+- An FX0A key wait is different from frontend pause: normal cycles keep calling the core and timers continue running.
+- Losing window focus temporarily freezes execution and clears held keys. Refocusing resumes unless you explicitly paused; press game keys again. Paused time is not replayed in a catch-up burst.
+- A long window drag/stall catches up at most 100 ms. This keeps the UI responsive.
+- F1 only changes rendering. It does not recreate the window or reload the ROM.
+- Pixels use the largest whole-number scale that fits, remain square, and are centered. The minimum window is 960 x 720; both modes adapt to resizing.
+- The UI is redrawn even when `drawFlag` is false so controls and debug values stay visible. Main clears `drawFlag` after rendering.
+- The opcode panel shows the core's last fetched `opcode`; PC is the core's current PC. Before the first cycle the opcode is 0000.
+- Registers, PC, I, SP and timer values are hexadecimal. In the stack indicator, `10` means 16 slots.
+- The sound timer and active sound signal are displayed. Audible sound is not implemented in this frontend.
+
+The UI uses a small built-in pixel alphabet, so no `.ttf` file, download, system-font lookup or font configuration is necessary. Unsupported filename characters are displayed as `?` in the pixel UI; the native window title keeps the filename text.
+
+Core errors appear in the terminal and as a stopped status in the UI. F5 can retry the existing ROM. Frontend errors such as window-creation failure are reported before exiting.
+
+## Optional CMake build
+
+With CMake installed and the same MinGW toolchain available:
 
 ```powershell
-New-Item -ItemType Directory -Force build
-g++ -std=c++17 -Wall -Wpedantic src/*.cpp -o build/chip8.exe
-./build/chip8.exe
+cmake -S . -B build/cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=C:/msys64/mingw64
+cmake --build build/cmake
+./build/cmake/chip8.exe "roms/your-game.ch8" --debug
 ```
 
-Or with CMake installed:
+CMake is not required for the direct `g++` command above. On other platforms, install SFML 3 for your compiler, then use `cmake -S . -B build/cmake` and `cmake --build build/cmake`.
 
-```sh
-cmake -S . -B build
-cmake --build build
+## Frontend integration tests
+
+The tests use small synthetic programs, not downloaded game ROMs. They deliberately trigger a core fault and a missing ROM to check error handling; those error messages are expected.
+
+```powershell
+$coreFiles = (Get-ChildItem src/Chip8*.cpp).FullName
+g++ -std=c++17 -Wall -Wextra -Wpedantic -Isrc tests/FrontendTests.cpp src/Display.cpp src/Input.cpp src/Frontend.cpp $coreFiles -o build/frontend_tests.exe -lsfml-graphics -lsfml-window -lsfml-system
+Push-Location build
+./frontend_tests.exe
+Pop-Location
 ```
+
+Checks cover all 16 key mappings, simultaneous keys, focus loss, mode switching without core changes, pause/resume, one-cycle steps, CPU rate limits, 60 Hz timers, key waits, reset/reload failures, and pixel scaling. Screenshots are saved under `build/test-output/` (`debug.png`, `debug-small.png`, `play.png`). The rendering tests need an OpenGL-capable environment even though they draw offscreen.
+
+For a real-window lifecycle check, run `./frontend_tests.exe --window` from the build folder. It briefly creates a window, hides it, renders both modes and checks close controls.
+
+With CMake, enable tests with `-DCHIP8_BUILD_TESTS=ON`, build, then run `ctest --test-dir build/cmake --output-on-failure`.

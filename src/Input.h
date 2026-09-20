@@ -2,13 +2,19 @@
 #define INPUT_H
 
 #include "Chip8.h"
+#include "Frontend.h"
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Window/Event.hpp>
 
-namespace sf
+class Input
 {
-    class RenderWindow;
-}
+public:
+    void handleInput(sf::RenderWindow& window, Chip8& chip8, FrontendState& state);
+    void handleEvent(const sf::Event& event, sf::RenderWindow& window,
+                     Chip8& chip8, FrontendState& state);
 
-// Awais: use the same window that main passes to Display.
-void handleInput(sf::RenderWindow& window, Chip8& chip8);
+private:
+    int chip8Key(sf::Keyboard::Scancode code);
+};
 
 #endif

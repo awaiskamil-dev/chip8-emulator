@@ -2,15 +2,31 @@
 #define DISPLAY_H
 
 #include "Chip8.h"
+#include "Frontend.h"
+#include <SFML/Graphics.hpp>
+#include <string>
 
-// A declaration only; SFML supplies the actual window class later.
-namespace sf
+class Display
 {
-    class RenderWindow;
-}
+public:
+    bool setupGraphics();
+    sf::RenderWindow& getWindow();
+    void render(const Chip8& chip8, const FrontendState& state);
 
-// Awais: main owns one SFML window and passes it to these functions.
-void setupGraphics(sf::RenderWindow& window);
-void drawGraphics(sf::RenderWindow& window, const Chip8& chip8);
+    // Also supports an offscreen SFML target for screenshot/resize tests.
+    void drawGraphics(sf::RenderTarget& target, const Chip8& chip8,
+                      const FrontendState& state);
+
+private:
+    sf::RenderWindow window;
+    std::string lastTitle;
+
+    void drawPlay(sf::RenderTarget& target, const Chip8& chip8,
+                  const FrontendState& state);
+    void drawDebug(sf::RenderTarget& target, const Chip8& chip8,
+                   const FrontendState& state);
+    void drawScreen(sf::RenderTarget& target, const Chip8& chip8,
+                    float x, float y, float width, float height);
+};
 
 #endif
