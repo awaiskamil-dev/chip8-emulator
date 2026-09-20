@@ -1,8 +1,10 @@
 #include "Chip8.h"
 #include <random>
+#include <cstdlib>
+#include <cstring>
 #include "time.h"
 
-// Awais: implement these functions.
+// Implemented by Awais
 
 uint8_t chip8_fontset[80] =
 {
@@ -30,6 +32,8 @@ void Chip8::init()
     opcode = 0; // reset opcode 
     I = 0;      // reset I
     sp = 0;     // reset stack pointer
+    running = true;
+    drawFlag = true;
 
     // clear display
     for(int i = 0; i < (64 * 32); i++){
@@ -82,7 +86,10 @@ void Chip8::arithmetic()
         break;
 
     case 0x8000:
+    {
         int y = (opcode & 0x00F0) >> 4;
+        int vx = V[x];
+        int vy = V[y];
 
         switch (opcode & 0x000F)
         {
@@ -110,84 +117,125 @@ void Chip8::arithmetic()
             pc += 2;
             break;
         
-        // 8XY4 - Adds VY to VX. VF is set to 1 when there's a carry,
-        // and to 0 when there isn't.
+        // 8XY4 - Add, with carry
         case 0x4:
-            if(V[x] > (0xFF - V[x])){ // 0xFF = 255 in dec
-                V[0xF] = 1; // carry
-            }
-            else{
-                V[0xF] = 0;
-            }
-            V[x] += V[y];
+            V[x] = vx + vy;
+            V[0xF] = (vx + vy > 255);
             pc += 2;
             break;
 
-        // 8XY5 - VY is subtracted from VX. VF is set to 0 when
-        // there's a borrow, and 1 when there isn't.
+        // 8XY5 - VX minus VY
         case 0x5:
-            if(V[y] > V[x]){
-                V[0xF] = 0; //borrow
-            }
-            else{
-                V[0xF] = 1;
-            }
-            V[x] -= V[y];
+            V[x] = vx - vy;
+            V[0xF] = (vx >= vy);
             pc += 2;
             break;
 
-        // 0x8XY6 - Shifts VX right by one. VF is set to the value of
-        // the least significant bit of VX before the shift.
+        // 8XY6 - Shift VX right
         case 0x6:
-            V[0xF] = V[x] & 0x1;
-            V[x] >>= 1;
+            V[x] = vx >> 1;
+            V[0xF] = vx & 1;
             pc += 2;
             break;
 
-        // 0x8XY7: Sets VX to VY minus VX. VF is set to 0 when there's
-        // a borrow, and 1 when there isn't.
+        // 8XY7 - VY minus VX
         case 0x7:
-            if(V[x] > V[y]){
-                V[0xF] = 0; // borrow
-            }
-            else{
-                V[0xF] = 1;
-            }
-            V[x] = V[y] - V[x];
+            V[x] = vy - vx;
+            V[0xF] = (vy >= vx);
             pc += 2;
             break;
-        
-        // 0x8XYE: Shifts VX left by one. VF is set to the value of
-        // the most significant bit of VX before the shift.
+
+        // 8XYE - Shift VX left
         case 0xE:
-            V[0xF] = V[x] >> 7;
-            V[x] <<= 1;
+            V[x] = vx << 1;
+            V[0xF] = (vx >> 7) & 1;
             pc += 2;
             break;
+
         default:
-            printf("\nUnknown op code: %.4X\n", opcode);
-            exit(3);
+            stop("unsupported 8XY instruction");
             break;
         }
 
         break;
+    }
     default:
-        printf("\nUnknown op code: %.4X\n", opcode);
-        exit(3);
+        stop("invalid arithemetic instruction");
         break;
     }
 }
 
-void Chip8::drawing()
-{
-    // TODO: 00E0 -- clear gfx.
-    // TODO: DXYN -- draw sprites using XOR and set V[0xF] for collisions.
-    // Both instructions set drawFlag and advance pc by 2.
+void Chip8::drawing() {
+    if (opcode == 0x00E0) {
+        std::memset(gfx, 0, sizeof(gfx));
+        drawFlag = true;
+        pc = static_cast<uint16_t>(pc + 2);
+        return;
+    }
+
+    const uint8_t x_register = static_cast<uint8_t>((opcode & 0x0F00) >> 8);
+    const uint8_t y_register = static_cast<uint8_t>((opcode & 0x00F0) >> 4);
+    const uint8_t height = static_cast<uint8_t>(opcode & 0x000F);
+    const uint8_t x_position = V[x_register];
+    const uint8_t y_position = V[y_register];
+    if (!can_read_memory(I, height)) {
+        stop("sprite reads outside memory");
+        return;
+    }
+
+    V[0xF] = 0;
+    for (uint8_t row = 0; row < height; ++row) {
+        const uint8_t sprite = memory[I + row];
+        const uint8_t screen_y = static_cast<uint8_t>((y_position + row) % 32);
+        for (uint8_t column = 0; column < 8; ++column) {
+            if ((sprite & (0x80 >> column)) == 0) {
+                continue;
+            }
+            const uint8_t screen_x = static_cast<uint8_t>((x_position + column) % 64);
+            const uint16_t pixel = static_cast<uint16_t>(screen_y * 64 + screen_x);
+            if (gfx[pixel] == 1) {
+                V[0xF] = 1;
+            }
+            gfx[pixel] ^= 1;
+        }
+    }
+
+    drawFlag = true;
+    pc = static_cast<uint16_t>(pc + 2);
 }
 
-void Chip8::keypad()
-{
-    // TODO: EX9E, EXA1 -- check key and skip when needed.
-    // TODO: FX0A -- wait for a key without blocking the window loop.
-    // Leave pc unchanged while waiting; advance it when a key is found.
+void Chip8::keypad() {
+    const uint8_t x = static_cast<uint8_t>((opcode & 0x0F00) >> 8);
+
+    if ((opcode & 0xF000) == 0xE000) {
+        const uint8_t key_index = V[x];
+        if (key_index >= 16) {
+            stop("EX instruction used an invalid key index");
+            return;
+        }
+
+        if ((opcode & 0x00FF) == 0x009E) {
+            pc = static_cast<uint16_t>(pc + (key[key_index] ? 4 : 2));
+            return;
+        }
+        if ((opcode & 0x00FF) == 0x00A1) {
+            pc = static_cast<uint16_t>(pc + (key[key_index] ? 2 : 4));
+            return;
+        }
+        stop("invalid keypad instruction");
+        return;
+    }
+
+    if (opcode == static_cast<uint16_t>(0xF00A | (x << 8))) {
+        for (uint8_t key_index = 0; key_index < 16; ++key_index) {
+            if (key[key_index]) {
+                V[x] = key_index;
+                pc = static_cast<uint16_t>(pc + 2);
+                return;
+            }
+        }
+        return;
+    }
+
+    stop("invalid keypad instruction");
 }
