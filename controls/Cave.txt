@@ -1,0 +1,13 @@
+# ROM: Cave.ch8
+# SHA-1: 5c82520906073287a3ef781746c67207ca084d93
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Cave.ch8
+# Title: Cave
+# Authors: 
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Direction tests 0x320-0x34A and key F start/restart checks 0x2A6/0x376.
+# Display text only, not remapping. Full gameplay still needs testing.
+2 - MOVE UP
+S - MOVE DOWN
+Q - MOVE LEFT
+E - MOVE RIGHT
+V - START / RESTART

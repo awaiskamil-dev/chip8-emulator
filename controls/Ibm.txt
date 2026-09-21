@@ -1,0 +1,9 @@
+# ROM: Ibm.ch8
+# SHA-1: 1ba58656810b67fd131eb9af3e3987863bf26c90
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Ibm.ch8
+# Title: IBM Logo
+# Authors: 
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+LOGO DEMO - NO GAME KEYS

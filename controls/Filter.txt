@@ -1,0 +1,11 @@
+# ROM: Filter.ch8
+# SHA-1: ae71a7b081a947f1760cdc147759803aea45e751
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Filter.ch8
+# Title: Filter
+# Authors: 
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Key tests 0x222-0x22C; paddle movement routines 0x25E/0x266.
+# Display text only, not remapping. Full gameplay still needs testing.
+Q - MOVE PADDLE LEFT
+E - MOVE PADDLE RIGHT
+CATCH THE FALLING DROPS

@@ -14,6 +14,7 @@ public:
                      Chip8& chip8, FrontendState& state);
 
 private:
+    void minimizeWindow(sf::RenderWindow& window, Chip8& chip8, FrontendState& state);
     int chip8Key(sf::Keyboard::Scancode code);
 };
 

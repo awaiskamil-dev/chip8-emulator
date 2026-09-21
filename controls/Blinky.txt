@@ -1,0 +1,12 @@
+# ROM: Blinky.ch8
+# SHA-1: d40abc54374e4343639f993e897e00904ddf85d9
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Blinky.ch8
+# Title: Blinky
+# Authors: Hans Christian Egeberg
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Direction key tests at 0x3DA-0x3F0. Database labels this variant Super-CHIP.
+# Display text only, not remapping. Full gameplay still needs testing.
+E - MOVE UP
+3 - MOVE DOWN
+A - MOVE LEFT
+S - MOVE RIGHT

@@ -1,0 +1,13 @@
+# ROM: Tank.ch8
+# SHA-1: 18b9d15f4c159e1f0ed58c2d8ec1d89325d3a3b6
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Tank.ch8
+# Title: Tank Battle
+# Authors: 
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Key 2 maps to Y+1 and key 8 to Y-1 at 0x288-0x296 and 0x39A-0x3AA. Key 5 fires.
+# Display text only, not remapping. Full gameplay still needs testing.
+S - MOVE UP
+2 - MOVE DOWN
+Q - MOVE LEFT
+E - MOVE RIGHT
+W - FIRE

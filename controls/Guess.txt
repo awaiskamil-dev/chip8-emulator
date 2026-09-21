@@ -1,0 +1,11 @@
+# ROM: Guess.ch8
+# SHA-1: 137cb8397456f53fcab216124458238bc18c0965
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Guess.ch8
+# Title: Guess the Number
+# Authors: David Winter
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+THINK OF A NUMBER FROM 1 TO 63
+W - YES, NUMBER IS SHOWN
+E - NO, NUMBER IS NOT SHOWN

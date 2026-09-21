@@ -1,0 +1,13 @@
+# ROM: Vers.ch8
+# SHA-1: ade839585ddeb0e3633177df03c1d91589e629eb
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Vers.ch8
+# Title: Vers
+# Authors: JMN
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+PLAYER 1: A UP / Z DOWN
+PLAYER 1: 1 LEFT / 2 RIGHT
+PLAYER 2: 4 UP / R DOWN
+PLAYER 2: C LEFT / V RIGHT
+AVOID WALLS AND BOTH TRAILS

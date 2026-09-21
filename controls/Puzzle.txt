@@ -1,0 +1,13 @@
+# ROM: Puzzle.ch8
+# SHA-1: 1293db0ccccbe7dd3fc5a09a2abc5d7b175e18e0
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Puzzle.ch8
+# Title: Puzzle
+# Authors: 
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Instructions 0x252-0x286 move the gap: keys 4/6 move it right/left respectively.
+# Display text only, not remapping. Full gameplay still needs testing.
+2 - MOVE GAP UP
+S - MOVE GAP DOWN
+E - MOVE GAP LEFT
+Q - MOVE GAP RIGHT
+WAIT FOR INITIAL SHUFFLE

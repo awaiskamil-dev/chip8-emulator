@@ -1,0 +1,13 @@
+# ROM: Merlin.ch8
+# SHA-1: d979858bb9ffd07b48f52f92a8bcac0199f3623e
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Merlin.ch8
+# Title: Merlin
+# Authors: David Winter
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+Q - TOP LEFT SQUARE
+W - TOP RIGHT SQUARE
+A - BOTTOM LEFT SQUARE
+S - BOTTOM RIGHT SQUARE
+REPEAT THE FLASHING SEQUENCE

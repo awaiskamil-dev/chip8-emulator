@@ -1,0 +1,13 @@
+# ROM: Kaleid.ch8
+# SHA-1: d6fa9dc9005dc0496f39ba52fef56f9fd0a5a158
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Kaleid.ch8
+# Title: Kaleidoscope
+# Authors: Joseph Weisbecker
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+2 - DRAW UP
+S - DRAW DOWN
+Q - DRAW LEFT
+E - DRAW RIGHT
+X - REPEAT YOUR PATTERN

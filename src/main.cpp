@@ -1,4 +1,5 @@
 #include "Chip8.h"
+#include "Audio.h"
 #include "Display.h"
 #include "Input.h"
 #include "Frontend.h"
@@ -11,7 +12,8 @@
 void printUsage()
 {
     std::cout << "Usage: chip8 [ROM.ch8] [--debug] [--paused] [--hz 100..2000]\n"
-              << "F1: Play/Debug  Space: Pause  F2: Step  F5: Reset  Esc: Close\n"
+              << "ROMs start paused. Click Play or press Space to begin.\n"
+              << "F1: Play/Debug  Space: Pause  F2: Step  F5: Reset  Esc: Minimize\n"
               << "+/-: CPU speed  Keypad: 1234 / QWER / ASDF / ZXCV\n";
 }
 
@@ -65,6 +67,10 @@ int main(int argc, char* argv[])
         if (!display.setupGraphics()) {
             return 1;
         }
+        Audio audio;
+        if (!audio.setupAudio()) {
+            std::cerr << "Could not create the buzzer. Continuing without sound.\n";
+        }
         Input input;
         sf::RenderWindow& window = display.getWindow();
         state.focused = window.hasFocus();
@@ -77,10 +83,12 @@ int main(int argc, char* argv[])
                 break;
             }
             updateEmulation(chip8, state, elapsedSeconds);
+            audio.update(chip8, state);
             display.render(chip8, state);
             // Always render the UI, even when no new game pixels were drawn.
             chip8.drawFlag = false;
         }
+        audio.stop();
     } catch (const std::exception& error) {
         std::cerr << "Frontend error: " << error.what() << '\n';
         return 1;

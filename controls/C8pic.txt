@@ -1,0 +1,9 @@
+# ROM: C8pic.ch8
+# SHA-1: a82ca5c53e1dcedfab4f65efef02229145771b7d
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/C8pic.ch8
+# Title: Chip8 Picture
+# Authors: 
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+PICTURE DEMO - NO GAME KEYS

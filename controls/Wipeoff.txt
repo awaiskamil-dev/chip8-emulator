@@ -1,0 +1,11 @@
+# ROM: Wipeoff.ch8
+# SHA-1: d666688a8fce468a7d88b536bc1ef5f35ba12031
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Wipeoff.ch8
+# Title: Wipe Off
+# Authors: Joseph Weisbecker
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+ANY KEYPAD KEY - SERVE
+Q - MOVE PADDLE LEFT
+E - MOVE PADDLE RIGHT

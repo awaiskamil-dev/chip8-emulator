@@ -1,0 +1,13 @@
+# ROM: Syzygy.ch8
+# SHA-1: 1bdb4ddaa7049266fa3226851f28855a365cfd12
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Syzygy.ch8
+# Title: Syzygy
+# Authors: Roy Trevino
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Key tests 0x216-0x22A, 0x29C-0x2C2 and 0x38C. Calculator labels translated first.
+# Display text only, not remapping. Full gameplay still needs testing.
+V - START WITH WALLS
+F - START WITHOUT WALLS
+3 / E - UP / DOWN
+A / S - LEFT / RIGHT
+C - CONTINUE AFTER GAME OVER

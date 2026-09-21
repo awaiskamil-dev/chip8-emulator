@@ -1,0 +1,12 @@
+# ROM: 15puzzle.ch8
+# SHA-1: cf3a8c546038c63cd4cc1de8d171b9bf0d57c0ee
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/15puzzle.ch8
+# Title: 15PUZZLE
+# Authors: David Winter
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Key-position table at 0x2F8 overrides the generic database direction description.
+# Display text only, not remapping. Full gameplay still needs testing.
+PRESS KEY FOR A TILE POSITION
+1234 / QWER / ASDF / ZXCV
+ROWS MATCH THE ON-SCREEN GRID
+WAIT FOR INITIAL SHUFFLE

@@ -1,0 +1,9 @@
+# Pong by Paul Vervalin (1990), matched by ROM SHA-1:
+# b232ef880bd6060fb45fa6effed7edf0ae95670e
+# Source: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Checked against the key tests at ROM addresses 0232-024C.
+# These are physical keyboard keys in OUR emulator, not calculator keys.
+1 - LEFT PADDLE UP
+Q - LEFT PADDLE DOWN
+4 - RIGHT PADDLE UP
+R - RIGHT PADDLE DOWN

@@ -1,0 +1,10 @@
+# ROM: Brix.ch8
+# SHA-1: f13766c14aeb02ad8d4d103cb5eadd282d20cddc
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Brix.ch8
+# Title: Brix
+# Authors: Andreas Gustafsson
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+Q - MOVE PADDLE LEFT
+E - MOVE PADDLE RIGHT

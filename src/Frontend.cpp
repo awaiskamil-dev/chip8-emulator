@@ -1,9 +1,11 @@
 #include "Frontend.h"
+#include "Controls.h"
 #include <algorithm>
 #include <iostream>
 
 bool loadCurrentRom(Chip8& chip8, FrontendState& state)
 {
+    state.controls.clear();
     state.resetRequested = false;
     state.stepRequests = 0;
     state.clearTiming = true;
@@ -23,6 +25,7 @@ bool loadCurrentRom(Chip8& chip8, FrontendState& state)
         return false;
     }
 
+    loadGameControls(state);
     state.message.clear();
     return true;
 }
@@ -64,13 +67,15 @@ void updateEmulation(Chip8& chip8, FrontendState& state, double elapsedSeconds)
         state.cycleAccumulator += elapsedSeconds * state.cpuHz;
         state.timerAccumulator += elapsedSeconds * 60.0;
 
-        while (state.cycleAccumulator >= 1.0 && chip8.running) {
-            chip8.emulate_cycle();
-            state.cycleAccumulator -= 1.0;
-        }
+        // These ticks belong to elapsed time before this frame's instructions.
+        // A newly written ST=1 must survive until the next tick to make a beep.
         while (state.timerAccumulator >= 1.0 && chip8.running) {
             chip8.update_timers();
             state.timerAccumulator -= 1.0;
+        }
+        while (state.cycleAccumulator >= 1.0 && chip8.running) {
+            chip8.emulate_cycle();
+            state.cycleAccumulator -= 1.0;
         }
     }
 

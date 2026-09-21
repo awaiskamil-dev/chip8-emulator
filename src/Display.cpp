@@ -1,4 +1,5 @@
 #include "Display.h"
+#include "UiLayout.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -112,6 +113,48 @@ void rectangle(sf::RenderTarget& target, float x, float y,
     target.draw(shape);
 }
 
+void button(sf::RenderTarget& target, const sf::FloatRect& area,
+            const FrontendState& state, bool close = false)
+{
+    bool hovered = area.contains(state.mousePosition) && state.focused;
+    sf::Color color = hovered ? sf::Color(48, 68, 76) : panelColor;
+    if (hovered && close) color = sf::Color(164, 59, 67);
+    rectangle(target, area.position.x, area.position.y, area.size.x, area.size.y, color, true);
+}
+
+void windowButtons(sf::RenderTarget& target, const FrontendState& state)
+{
+    button(target, UiLayout::minimizeButton, state);
+    text(target, "-", 1264, 27, 2, ink);
+    button(target, UiLayout::closeButton, state, true);
+    text(target, "X", 1320, 27, 2, ink);
+}
+
+void playbackButton(sf::RenderTarget& target, const Chip8& chip8, const FrontendState& state)
+{
+    if (!state.romLoaded || !chip8.running) return;
+    sf::FloatRect area = UiLayout::screen(state.debugMode);
+    bool hovered = state.focused && area.contains(state.mousePosition);
+    if (!state.paused && !hovered) return;
+    sf::FloatRect control = UiLayout::pauseButton(state.debugMode);
+    float x = control.position.x;
+    float y = control.position.y;
+    button(target, control, state);
+    if (state.paused) {
+        sf::ConvexShape play(3);
+        play.setPoint(0, {x + 25, y + 16});
+        play.setPoint(1, {x + 25, y + 48});
+        play.setPoint(2, {x + 46, y + 32});
+        play.setFillColor(accent);
+        target.draw(play);
+        rectangle(target, x - 54, y + 72, 172, 26, panelColor);
+        text(target, "SPACE TO PLAY", x - 44, y + 78, 2, ink);
+    } else {
+        rectangle(target, x + 21, y + 18, 8, 28, accent);
+        rectangle(target, x + 36, y + 18, 8, 28, accent);
+    }
+}
+
 std::string hex(unsigned int value, int digits)
 {
     char result[16];
@@ -152,12 +195,12 @@ std::string status(const Chip8& chip8, const FrontendState& state)
 
 bool Display::setupGraphics()
 {
-    window.create(sf::VideoMode({1280, 860}), "CHIP-8");
+    window.create(sf::VideoMode({UiLayout::width, UiLayout::height}), "CHIP-8", sf::Style::None);
     if (!window.isOpen()) {
         std::cerr << "Could not create the SFML window.\n";
         return false;
     }
-    window.setMinimumSize(sf::Vector2u{960, 720});
+    window.setPosition({0, 0});
     window.setKeyRepeatEnabled(false);
     window.setFramerateLimit(60);
     return true;
@@ -184,19 +227,16 @@ void Display::render(const Chip8& chip8, const FrontendState& state)
 void Display::drawGraphics(sf::RenderTarget& target, const Chip8& chip8,
                            const FrontendState& state)
 {
-    sf::Vector2u size = target.getSize();
-    if (size.x == 0 || size.y == 0) {
-        return;
-    }
-    // Coordinates remain actual window pixels after resizing, not stretched UI.
-    target.setView(sf::View(sf::FloatRect({0, 0},
-                   {static_cast<float>(size.x), static_cast<float>(size.y)})));
+    // This UI intentionally uses one fixed monitor size.
+    target.setView(sf::View(sf::FloatRect({0, 0}, {1366, 768})));
     target.clear(background);
-    if (state.debugMode && size.x >= 960 && size.y >= 720) {
+    if (state.debugMode) {
         drawDebug(target, chip8, state);
     } else {
         drawPlay(target, chip8, state);
     }
+    playbackButton(target, chip8, state);
+    windowButtons(target, state);
 }
 
 void Display::drawScreen(sf::RenderTarget& target, const Chip8& chip8,
@@ -225,23 +265,22 @@ void Display::drawScreen(sf::RenderTarget& target, const Chip8& chip8,
 void Display::drawPlay(sf::RenderTarget& target, const Chip8& chip8,
                        const FrontendState& state)
 {
-    float width = static_cast<float>(target.getSize().x);
-    float height = static_cast<float>(target.getSize().y);
-    drawScreen(target, chip8, 24, 24, width - 48, height - 48);
-    // Normal play contains only the game. Pause/status is in the window title.
-    if (!state.romLoaded || !chip8.running) {
-        std::string message = fit(state.message.empty() ? status(chip8, state) : state.message,
-                                  static_cast<int>((width - 48) / 12));
-        rectangle(target, 0, height - 48, width, 48, background);
-        text(target, message, 24, height - 30, 2, amber);
-    }
+    const sf::FloatRect area = UiLayout::playScreen;
+    drawScreen(target, chip8, area.position.x, area.position.y, area.size.x, area.size.y);
+    text(target, "CHIP-8 / " + fit(romName(state), 52), 24, 28, 2, ink);
+    button(target, UiLayout::debugButton, state);
+    text(target, "DEBUG", 1110, 29, 2, ink);
+    std::string message = !state.romLoaded || !chip8.running
+        ? (state.message.empty() ? status(chip8, state) : state.message)
+        : status(chip8, state) + " / SPACE PLAY-PAUSE / F1 DEBUG / ESC MINIMIZE";
+    text(target, fit(message, 110), 24, 750, 1, muted);
 }
 
 void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
                         const FrontendState& state)
 {
-    float width = static_cast<float>(target.getSize().x);
-    float height = static_cast<float>(target.getSize().y);
+    const float width = UiLayout::width;
+    const float height = UiLayout::height;
     const float margin = 24;
     const float gap = 16;
     const float rightWidth = 320;
@@ -257,9 +296,9 @@ void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
     text(target, "/ VIRTUAL MACHINE", 172, 36, 1, muted);
     std::string machineStatus = status(chip8, state);
     sf::Color stateColor = machineStatus == "RUNNING" ? accent : amber;
-    rectangle(target, width - 180, 24, 156, 30, panelColor, true);
-    rectangle(target, width - 168, 36, 6, 6, stateColor);
-    text(target, machineStatus, width - 148, 32, 2, stateColor);
+    rectangle(target, 1040, 24, 156, 30, panelColor, true);
+    rectangle(target, 1052, 36, 6, 6, stateColor);
+    text(target, machineStatus, 1072, 32, 2, stateColor);
     text(target, "ROM / " + fit(romName(state), static_cast<int>((width - 400) / 12)),
          24, 68, 2, muted);
     text(target, std::to_string(state.cpuHz) + " HZ", width - 304, 68, 2, accent);
@@ -269,16 +308,44 @@ void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
     // Game display panel.
     rectangle(target, margin, bodyY, leftWidth, gameHeight, panelColor, true);
     text(target, "01 / DISPLAY", margin + 20, bodyY + 18, 2, muted);
-    text(target, "64 X 32", margin + leftWidth - 104, bodyY + 20, 1, muted);
-    drawScreen(target, chip8, margin + 16, bodyY + 48, leftWidth - 32, gameHeight - 64);
+    text(target, "64 X 32", margin + leftWidth - 160, bodyY + 20, 1, muted);
+    button(target, UiLayout::expandButton, state);
+    // Four corners form the expand icon.
+    for (int row = 0; row < 2; ++row) {
+        for (int column = 0; column < 2; ++column) {
+            float x = 960.f + column * 12;
+            float y = 118.f + row * 10;
+            rectangle(target, x, y + row * 4, 8, 2, ink);
+            rectangle(target, x + column * 6, y, 2, 6, ink);
+        }
+    }
+    const sf::FloatRect area = UiLayout::debugScreen;
+    drawScreen(target, chip8, area.position.x, area.position.y, area.size.x, area.size.y);
 
-    // Keypad visualization reads the same key[] that the opcodes use.
-    rectangle(target, margin, keypadY, leftWidth, 228, panelColor, true);
-    text(target, "02 / KEYPAD", margin + 20, keypadY + 18, 2, muted);
+    // Game controls on the left, live CHIP-8 keypad on the right.
+    const float controlsWidth = 470;
+    const float keypadX = margin + controlsWidth + gap;
+    const float keypadWidth = leftWidth - controlsWidth - gap;
+    rectangle(target, margin, keypadY, controlsWidth, 228, panelColor, true);
+    text(target, "02 / CONTROLS", margin + 20, keypadY + 18, 2, muted);
+    if (!state.romLoaded || state.controls.empty()) {
+        text(target, state.romLoaded ? "GAME CONTROLS UNAVAILABLE" : "LOAD A ROM TO SEE CONTROLS",
+             margin + 20, keypadY + 62, 2, muted);
+    } else {
+        for (std::size_t i = 0; i < state.controls.size() && i < 6; ++i) {
+            text(target, fit(state.controls[i], 35), margin + 20,
+                 keypadY + 52 + static_cast<float>(i) * 24, 2, ink);
+        }
+    }
+    text(target, "YOUR KEYBOARD / F5 RELOADS AND RESETS", margin + 20, keypadY + 208, 1, muted);
+
+    // The keypad still reads the exact key[] used by the core opcodes.
+    rectangle(target, keypadX, keypadY, keypadWidth, 228, panelColor, true);
+    text(target, "03 / KEYPAD", keypadX + 20, keypadY + 18, 2, muted);
     const int keyOrder[16] = {1,2,3,12, 4,5,6,13, 7,8,9,14, 10,0,11,15};
     const char* physicalKeys = "1234QWERASDFZXCV";
     for (int index = 0; index < 16; ++index) {
-        float x = margin + 20 + (index % 4) * 60;
+        float x = keypadX + 20 + (index % 4) * 60;
         float y = keypadY + 48 + (index / 4) * 42;
         bool held = chip8.key[keyOrder[index]] != 0;
         rectangle(target, x, y, 52, 34, held ? accent : background, true);
@@ -287,7 +354,7 @@ void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
         text(target, std::string(1, physicalKeys[index]), x + 38, y + 7, 1,
              held ? background : muted);
     }
-    float guideX = margin + 288;
+    float guideX = keypadX + 288;
     text(target, "PHYSICAL KEYS", guideX, keypadY + 52, 1, muted);
     text(target, "1 2 3 4", guideX, keypadY + 76, 2, ink);
     text(target, "Q W E R", guideX, keypadY + 104, 2, ink);
@@ -298,7 +365,7 @@ void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
     // Register panel. Values are formatted directly from Chip8 on each frame.
     float registersHeight = std::min(400.0f, bodyHeight - 240);
     rectangle(target, rightX, bodyY, rightWidth, registersHeight, panelColor, true);
-    text(target, "03 / REGISTERS", rightX + 20, bodyY + 18, 2, muted);
+    text(target, "04 / REGISTERS", rightX + 20, bodyY + 18, 2, muted);
     float rowSpacing = std::floor((registersHeight - 124) / 8);
     for (int row = 0; row < 8; ++row) {
         float y = bodyY + 52 + row * rowSpacing;
@@ -316,14 +383,14 @@ void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
 
     float opcodeY = bodyY + registersHeight + gap;
     rectangle(target, rightX, opcodeY, rightWidth, 112, panelColor, true);
-    text(target, "04 / CURRENT OPCODE", rightX + 20, opcodeY + 18, 2, muted);
+    text(target, "05 / CURRENT OPCODE", rightX + 20, opcodeY + 18, 2, muted);
     text(target, hex(chip8.opcode, 4), rightX + 20, opcodeY + 48, 5, accent);
     text(target, "LAST FETCHED", rightX + 164, opcodeY + 66, 1, muted);
 
     float timersY = opcodeY + 112 + gap;
     float timersHeight = bodyY + bodyHeight - timersY;
     rectangle(target, rightX, timersY, rightWidth, timersHeight, panelColor, true);
-    text(target, "05 / TIMERS", rightX + 20, timersY + 18, 2, muted);
+    text(target, "06 / TIMERS", rightX + 20, timersY + 18, 2, muted);
     text(target, "DT " + hex(chip8.delay_timer, 2), rightX + 20, timersY + 48, 3, ink);
     text(target, "ST " + hex(chip8.sound_timer, 2), rightX + 176, timersY + 48, 3,
          chip8.sound_timer > 0 ? amber : ink);
@@ -334,7 +401,7 @@ void Display::drawDebug(sf::RenderTarget& target, const Chip8& chip8,
     }
 
     rectangle(target, 24, height - 56, width - 48, 1, borderColor);
-    text(target, "F1 MODE   SPACE PAUSE   F2 STEP   F5 RESET   +/- SPEED   ESC EXIT",
+    text(target, "ESC MINIMIZE   F1 MODE   F2 STEP   F5 RESET   SPACE PAUSE   +/- SPEED",
          24, height - 42, 2, muted);
     std::string message = state.message.empty()
         ? "TIMERS FREEZE ON PAUSE / F2 RUNS ONE CPU CYCLE / FOCUS LOSS RELEASES ALL KEYS"

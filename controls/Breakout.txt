@@ -1,0 +1,10 @@
+# ROM: Breakout.ch8
+# SHA-1: 237756a4014fb3aa82a29246a7cdd534f8dc2dbb
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Breakout.ch8
+# Title: Breakout
+# Authors: David Winter
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+Q - MOVE PADDLE LEFT
+E - MOVE PADDLE RIGHT

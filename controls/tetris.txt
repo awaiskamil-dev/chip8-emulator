@@ -1,0 +1,9 @@
+# Tetris by Fran Dachille (1991), matched by ROM SHA-1:
+# 5f518084744bf3cb8733f6e5454dfd1634320563
+# Source: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# CHIP-8 keys: 4 rotate, 5 left, 6 right, 7 faster drop.
+# Holding key 7 clears the drop delay; this is not an instant hard drop.
+Q - ROTATE PIECE
+W - MOVE LEFT
+E - MOVE RIGHT
+A - DROP FASTER (HOLD)

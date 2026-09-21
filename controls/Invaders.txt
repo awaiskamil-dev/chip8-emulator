@@ -1,0 +1,11 @@
+# ROM: Invaders.ch8
+# SHA-1: 5c28a5f85289c9d859f95fd5eadbdcb1c30bb08b
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Invaders.ch8
+# Title: Space Invaders
+# Authors: David Winter
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Matched ROM documentation translated to this emulator keyboard.
+# Display text only, not remapping. Full gameplay still needs testing.
+W - START / FIRE
+Q - MOVE LEFT
+E - MOVE RIGHT

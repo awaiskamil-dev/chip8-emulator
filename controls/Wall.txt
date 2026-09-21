@@ -1,0 +1,11 @@
+# ROM: Wall.ch8
+# SHA-1: 09ce01c54ddddda42ca5cd171f1ffcfd47355d12
+# Download: https://raw.githubusercontent.com/netpro2k/Chip8/master/games/Wall.ch8
+# Title: Wall
+# Authors: David Winter
+# Reference: https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json
+# Evidence: Key registers V9=1, VA=4 at 0x24E-0x250; Y movement 0x26E-0x288.
+# Display text only, not remapping. Full gameplay still needs testing.
+1 - MOVE PADDLE UP
+Q - MOVE PADDLE DOWN
+ANY KEYPAD KEY - SERVE / CONTINUE
