@@ -127,7 +127,7 @@ void Chip8::arithmetic()
         // 8XY5 - VX minus VY
         case 0x5:
             V[x] = vx - vy;
-            V[0xF] = (vx >= vy);
+            V[0xF] = (vx >= vy); // no borrow
             pc += 2;
             break;
 
@@ -141,7 +141,7 @@ void Chip8::arithmetic()
         // 8XY7 - VY minus VX
         case 0x7:
             V[x] = vy - vx;
-            V[0xF] = (vy >= vx);
+            V[0xF] = (vy >= vx); //no borrow
             pc += 2;
             break;
 

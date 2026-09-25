@@ -1,175 +1,113 @@
-# CHIP-8 emulator + SFML frontend
+# CHIP-8 Emulator
 
-This project uses your existing CHIP-8 core with an SFML 3 frontend. Play Mode shows the game; Debug Mode shows the same game alongside the live CPU state and keypad.
+A **C++17 / SFML 3** desktop emulator for classic CHIP-8 games, with a pixel display, sound, and a live CPU debugger.
 
-The frontend does not implement any opcodes. It reads `gfx`, `V`, `key`, `pc`, `I`, `sp`, `opcode`, and the timers from your existing `Chip8` object. The core files and their public interface were left unchanged.
+## Contributors
 
-## Build and run on this machine
+| Contributor | Core contributions |
+| --- | --- |
+| **[Awais](https://github.com/awaiskamil-dev)** | Initialization, arithmetic and logic, sprite drawing, and keypad handling — [Chip8.cpp](src/Chip8.cpp). |
+| **[Mustafa](https://github.com/mmkhawaja2006titan)** | Fetch-decode-execute cycle, flow control, random numbers, ROM loading, memory instructions, and timers — [execution](src/Chip8Execution.cpp), [memory](src/Chip8Memory.cpp), [timers](src/Chip8Timers.cpp). |
 
-SFML **3.0.2** and MinGW are already installed under `C:\msys64\mingw64`. These commands use that toolchain (not an SFML 2 tutorial or an MSVC-built library).
+Contributions follow the authorship comments in the source files.
 
-From the project folder in PowerShell:
+[**Project report (PDF)**](docs/project-report.pdf) · Architecture, opcode implementation, execution walkthroughs, and design notes.
+
+![Space Invaders in Debug mode with live registers, opcode, timers, controls, and keypad](docs/screenshots/invaders-debug.png)
+
+## Features
+
+- **Play and Debug modes:** switch views without restarting the game.
+- **Live CPU state:** registers, program counter, index register, stack pointer, opcode, and timers.
+- **Execution controls:** pause, single-step, reset, and adjustable CPU speed from 100 to 2,000 Hz.
+- **Crisp graphics and sound:** 64 × 32 display with integer scaling, a built-in pixel font, and a buzzer.
+- **32 games and demos:** game-specific controls, a live keypad, and automatic pause on focus loss.
+
+## Screenshots
+
+| Space Invaders | Tetris |
+| :---: | :---: |
+| ![Space Invaders with enemies, player ship, and projectile](docs/screenshots/invaders.png) | ![Tetris with a falling piece above settled blocks](docs/screenshots/tetris.png) |
+| **Breakout** | **Pong** |
+| ![Breakout with bricks, ball, and paddle](docs/screenshots/breakout.png) | ![Pong with both paddles, ball, and score](docs/screenshots/pong.png) |
+
+Real gameplay frames captured through the emulator's SFML renderer at 1366 × 768.
+
+## Build and run
+
+**Requirements:** Windows, a C++17 compiler, SFML **3** (Graphics, Window, System, Audio), and an OpenGL-capable graphics driver. Use matching compiler and SFML builds; SFML 2 is not supported.
+
+From the repository root in PowerShell, using MSYS2 / MinGW-w64:
 
 ```powershell
-New-Item -ItemType Directory -Force build
+# Adjust to your MSYS2 installation.
+$env:Path = "C:\msys64\mingw64\bin;$env:Path"
+New-Item -ItemType Directory -Force build | Out-Null
+
 g++ -std=c++17 -Wall -Wextra -Wpedantic src/*.cpp -o build/chip8.exe -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
-./build/chip8.exe "roms/your-game.ch8"
+./build/chip8.exe "roms/Invaders.ch8"
 ```
 
-Replace the example path with your own ROM. No game ROMs are bundled. ROMs now start paused: click the centered Play triangle or press Space to begin. `--paused` remains accepted for compatibility.
+**Press Space to run, then W to start Space Invaders.** All ROMs start paused.
 
 ```powershell
-# Open directly in Debug Mode, paused before the first instruction:
-./build/chip8.exe "roms/your-game.ch8" --debug --paused
-
-# Choose a CPU rate (instructions per second):
-./build/chip8.exe "roms/your-game.ch8" --hz 900
-
-# Inspect the frontend without a ROM, or print help:
-./build/chip8.exe
+./build/chip8.exe "roms/Tetris.ch8"
+./build/chip8.exe "roms/Pong.ch8" --debug
+./build/chip8.exe "roms/Breakout.ch8" --hz 900
 ./build/chip8.exe --help
 ```
 
-An invalid ROM path prints an error and exits. Launching without a ROM opens the debugger with a clear no-ROM message; pressing F5 in that state is harmless. Supply a ROM path when starting the application to play.
+Launch without a ROM to open an empty debugger. CPU speed defaults to **700 Hz**; timers run independently at **60 Hz**.
 
-If `g++` or SFML DLLs are not found, put `C:\msys64\mingw64\bin` on your terminal's PATH. Keep the SFML/compiler toolchains matched. The executable depends on the installed SFML/runtime DLLs; the `.exe` alone is not a standalone distributable.
+<details>
+<summary>Build with CMake / run tests</summary>
+
+Requires CMake 3.16+ and the same MinGW/SFML toolchain on `PATH`:
+
+```powershell
+cmake -S . -B build/cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=C:/msys64/mingw64 -DCHIP8_BUILD_TESTS=ON
+cmake --build build/cmake
+./build/cmake/chip8.exe "roms/Invaders.ch8"
+ctest --test-dir build/cmake --output-on-failure
+```
+
+The integration suite checks input, timing, pause/step/reset, control guides, and rendering. Rendering tests require OpenGL; deliberate core-error messages are expected in error-handling checks.
+
+</details>
 
 ## Controls
 
-| Control | Action |
+| Key | Action |
 | --- | --- |
-| F1 | Switch Play / Debug layout; keeps the current program and CPU state |
-| Space / centered Play or Pause button | Pause / resume; Pause appears when hovering over the running game |
-| Expand icon in Debug / Debug button in Play | Switch layouts while preserving execution and pause state |
-| Top-right - / X | Minimize / close the window |
-| F2 | Execute exactly one normal CPU cycle while paused |
-| F5 | Reload the same ROM using the existing `load()` / `init()`; preserve mode and pause setting |
-| Esc | Minimize the window; restore from the taskbar or Alt+Tab |
-| + / - | Change CPU rate by 100 Hz, limited to 100-2000 Hz |
-
-The main keyboard's `=` key also increases speed without needing Shift; numpad +/- work too. Holding F2 does not repeat steps: release and press it again.
+| **F1** | Switch Play / Debug mode |
+| **Space** | Pause / resume |
+| **F2** | Step one CPU cycle while paused |
+| **F5** | Reload and reset the game |
+| **+ / −** | Adjust CPU speed by 100 Hz (`=` also increases speed) |
+| **Esc** | Minimize the window |
 
 ```text
-Physical keyboard       CHIP-8 key
-1 2 3 4                 1 2 3 C
-Q W E R                 4 5 6 D
-A S D F                 7 8 9 E
-Z X C V                 A 0 B F
+Your keyboard          CHIP-8 keypad
+  1 2 3 4                1 2 3 C
+  Q W E R                4 5 6 D
+  A S D F                7 8 9 E
+  Z X C V                A 0 B F
 ```
 
-Debug Mode highlights the real `key[16]` entries. The small character on each tile is its physical keyboard key. Mappings use physical key positions (scancodes).
-
-## Game-specific controls
-
-Debug Mode now shows 01 Display, 02 Controls, 03 Keypad, 04 Registers,
-05 Current Opcode, and 06 Timers. The controls and keypad share the bottom row.
-Play Mode keeps the large game display.
-
-`roms/Pong.ch8` loads `controls/Pong.txt`; `roms/tetris.rom` loads
-`controls/tetris.txt`. The descriptions use this emulator's physical keyboard:
-Pong uses 1/Q for the left paddle and 4/R for the right paddle; Tetris uses
-Q to rotate, W/E to move, and held A to drop faster.
-
-Edit these plain text files to adjust the descriptions. Press F5 to reload the
-text **and reset the game**, or restart the app. Missing descriptions do not stop
-the game. See [controls/README.md](controls/README.md) for the format, lookup
-rules, and documentation source. The text files never execute commands or remap keys.
-
-Esc and the top-right minus button both minimize; the X button still exits.
-
-## What each frontend file does
-
-| File | Responsibility |
+| Game | Keyboard controls |
 | --- | --- |
-| `src/Display.h/.cpp` | Own the window; render the existing framebuffer, Play/Debug layouts, registers, keypad, last fetched opcode and timers |
-| `src/Input.h/.cpp` | Handle SFML events, write physical key states into `chip8.key`, and request UI actions |
-| `src/UiLayout.h` | Fixed screen and button coordinates shared by rendering and mouse input |
-| `src/Audio.h/.cpp` | Generate the looping buzzer and gate playback using the existing sound timer, pause and focus state |
-| `src/Controls.h/.cpp` | Read the matching game controls text file when loading or resetting a ROM |
-| `src/Frontend.h/.cpp` | Small frontend settings structure and helpers for scheduling core calls / reloading a ROM |
-| `src/main.cpp` | Read arguments, create the one core object, then process input, update emulation and render |
-| `CMakeLists.txt` | Build with SFML 3; optionally build integration tests |
-| `tests/FrontendTests.cpp` | Exercise frontend controls/timing and generate layout screenshots |
+| Space Invaders | **W** start/fire · **Q / E** left/right |
+| Tetris | **Q** rotate · **W / E** left/right · hold **A** to drop faster |
+| Breakout | **Q / E** move paddle left/right |
+| Pong | **1 / Q** left paddle up/down · **4 / R** right paddle up/down |
 
-`FrontendState` only stores UI settings, the ROM path, messages and timing fractions. It does not copy registers, memory, pixels or keypad state. `Display` takes a read-only reference to `Chip8`.
+Other games show their controls in Debug mode. To add a guide for `roms/Game.ch8`, create `controls/Game.txt` with up to six short ASCII lines (35 characters each). Lines starting with `#` are comments. Guides describe controls without remapping keys; **F5** reloads the guide and resets the game.
 
-The existing core ownership stays the same: Awais's initialization/arithmetic/drawing/keypad code is in `Chip8.cpp`; Mustafa's cycle, flow-control, ROM/memory and timer code is in the other `Chip8*.cpp` files.
+## Notes
 
-## Timing and display behavior
+- The frontend uses a fixed **1366 × 768** borderless Windows layout.
+- Keep the SFML and compiler runtime DLLs on `PATH`; the `.exe` alone is not a standalone distribution.
+- Pausing or losing focus freezes execution and silences audio. Unsupported opcodes stop the core and report an error in the terminal.
+- Targets classic CHIP-8; full Super-CHIP and XO-CHIP extensions are not implemented. ROM compatibility varies.
 
-- Default CPU speed is 700 instructions/second. Rendering is capped at 60 frames/second; a frame can execute several instructions.
-- Timer scheduling calls the existing `update_timers()` at 60 Hz, independently of CPU speed. The core still performs the decrements.
-- Explicit pause freezes CPU execution and timers. F2 steps the CPU only, leaving timers frozen for predictable debugging.
-- An FX0A key wait is different from frontend pause: normal cycles keep calling the core and timers continue running.
-- Losing window focus temporarily freezes execution and clears held keys. Refocusing resumes unless you explicitly paused; press game keys again. Paused time is not replayed in a catch-up burst.
-- A long frame stall catches up at most 100 ms. This keeps the UI responsive.
-- F1 only changes rendering. It does not recreate the window or reload the ROM.
-- The borderless window is fixed at 1366 x 768, positioned at the top-left of the primary monitor. It is designed for your 1366 x 768 monitor at 100% scaling with the taskbar hidden; it is not resizable.
-- Play Mode uses a centered 1344 x 672 game display (21 pixels per CHIP-8 pixel), leaving room for window controls. Debug Mode uses 576 x 288 (9 pixels per CHIP-8 pixel), with the complete keypad visible. Pixels stay square and the game keeps its 2:1 aspect ratio.
-- The minimize button uses the Windows API because SFML has no minimize operation. Restore the window from the taskbar or with Alt+Tab. Focus loss freezes execution and releases keys; restoring keeps your explicit pause setting.
-- The UI is redrawn even when `drawFlag` is false so controls and debug values stay visible. Main clears `drawFlag` after rendering.
-- The opcode panel shows the core's last fetched `opcode`; PC is the core's current PC. Before the first cycle the opcode is 0000.
-- Registers, PC, I, SP and timer values are hexadecimal. In the stack indicator, `10` means 16 slots.
-- A generated 480 Hz square-wave buzzer plays while the sound timer is positive. It uses SFML Audio, with no sound files or downloads. The sample amplitude is 8000 and SFML volume is 20/100.
-- Audio is silent while paused (including F2 stepping), unfocused/minimized, with no ROM, or after a core fault. Refocusing/resuming sounds the buzzer again if the timer is still positive. Reset normally clears the timer; closing the app stops playback.
-- The frontend applies elapsed 60 Hz ticks before running the frame's CPU instructions so a new one-tick beep is not immediately erased. Audio is synchronized once per frame, so beep timing has frame-sized granularity.
-- The sound timer display shows the core's value even when frontend pause/focus rules silence playback. A game must use FX18 to request a beep.
-
-The UI uses a small built-in pixel alphabet, so no `.ttf` file, download, system-font lookup or font configuration is necessary. Unsupported filename characters are displayed as `?` in the pixel UI; the native window title keeps the filename text.
-
-Core errors appear in the terminal and as a stopped status in the UI. F5 can retry the existing ROM. Frontend errors such as window-creation failure are reported before exiting.
-
-## Sound
-
-The buzzer uses the system's default audio output. If you see a positive ST while
-running but hear nothing, check Windows volume/mute, the app's volume in the
-Volume Mixer, and the selected output device. Keep `libsfml-audio-3.dll` and its
-runtime dependencies available through `C:/msys64/mingw64/bin`, just like the
-other SFML libraries. Sound is intentionally silent while paused or minimized.
-
-## Optional CMake build
-
-With CMake installed and the same MinGW toolchain available:
-
-```powershell
-cmake -S . -B build/cmake -G "MinGW Makefiles" -DCMAKE_PREFIX_PATH=C:/msys64/mingw64
-cmake --build build/cmake
-./build/cmake/chip8.exe "roms/your-game.ch8" --debug
-```
-
-CMake is not required for the direct `g++` command above. This fixed presentation layout and its minimize control target Windows.
-
-## Frontend integration tests
-
-The tests use small synthetic programs, not downloaded game ROMs. They deliberately trigger a core fault and a missing ROM to check error handling; those error messages are expected.
-
-```powershell
-$coreFiles = (Get-ChildItem src/Chip8*.cpp).FullName
-g++ -std=c++17 -Wall -Wextra -Wpedantic -Isrc tests/FrontendTests.cpp src/Display.cpp src/Input.cpp src/Frontend.cpp src/Controls.cpp src/Audio.cpp $coreFiles -o build/frontend_tests.exe -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
-Push-Location build
-./frontend_tests.exe
-Pop-Location
-```
-
-Checks cover all 16 key mappings, simultaneous keys, focus loss, mode switching without core changes, pause/resume, one-cycle steps, CPU rate limits, 60 Hz timers, key waits, reset/reload failures, mouse controls, paused startup, controls-file parsing/reloading, and pixel scaling. Screenshots are saved under `build/test-output/` (`debug.png`, `debug-hover.png`, `play.png`). The rendering tests need an OpenGL-capable environment even though they draw offscreen.
-
-For a real-window lifecycle check, run `./frontend_tests.exe --window` from the build folder. It briefly creates a window, hides it, renders both modes and checks the fixed size, borderless style, minimize and close controls.
-
-To check the documented keys against your exact local Pong and Tetris ROMs:
-
-```powershell
-Push-Location build
-./frontend_tests.exe --rom-controls ../roms/Pong.ch8 ../roms/tetris.rom
-Pop-Location
-```
-
-This optional check executes the ROMs' own movement/rotation instructions through
-the existing core and saves `build/test-output/tetris-controls.png`. It targets
-the ROM versions identified in the controls files; it is not a full gameplay test.
-
-With CMake, enable tests with `-DCHIP8_BUILD_TESTS=ON`, build, then run `ctest --test-dir build/cmake --output-on-failure`.
-
-The optional audio check briefly plays the generated tone and requires a working
-audio output device. From `build`, run `./frontend_tests.exe --audio`. It checks
-short beeps, looping, timer expiry, pause/step, focus loss, reset and core faults.
-It verifies SFML playback state; actual speaker volume still depends on Windows.
+ROMs come from [netpro2k/Chip8](https://github.com/netpro2k/Chip8/tree/master/games). See [ROM attribution](docs/rom-attribution.md) for authors, hashes, and distribution notes. The collection contains 33 files, including a duplicate Tetris ROM.

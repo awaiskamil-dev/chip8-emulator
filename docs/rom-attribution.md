@@ -1,32 +1,10 @@
-# Downloaded ROM collection
+# ROM sources and attribution
 
-[Source games folder](https://github.com/netpro2k/Chip8/tree/master/games). Downloaded 2026-09-21.
-Kept 32 of the 33 source ROMs: 31 newly added files and the identical existing Pong.ch8.
-Existing tetris.rom is also preserved. Tetris.ch8 has identical bytes; both use tetris.txt
-on Windows. There are 33 ROM files in total, including that Tetris duplicate.
-All downloaded bytes were verified against GitHub Git blob hashes.
+The included collection comes from [netpro2k/Chip8](https://github.com/netpro2k/Chip8/tree/master/games), downloaded on 2026-09-21 and verified against GitHub blob hashes. Author and platform metadata was recorded from the [CHIP-8 database](https://github.com/chip-8/chip-8-database). Per-ROM source notes and control evidence are in [controls](../controls/).
 
-## Compatibility check
+There are 33 files containing 32 distinct programs: `Tetris.ch8` and `tetris.rom` are identical. The retained collection previously passed 60,000-instruction smoke checks in 18 input scenarios, not exhaustive gameplay testing. `X-mirror.ch8` was excluded because it immediately encounters an unsupported opcode.
 
-X-mirror.ch8 and its controls file were removed: the current core stops at PC 0x204
-on unsupported opcode 0x0000. No emulator source code was changed.
-The retained ROMs loaded and ran without a core stop for 60,000 instructions per
-input scenario: no keys, each individual key pressed/released, and a rotating keypad
-sequence (18 scenarios total). This is a smoke check, not complete gameplay validation.
-Some are catalogued as CHIP-48 or Super-CHIP; that label alone did not cause a failure
-in these checks. Their later game states, timing and graphics may still need playtesting.
-
-## Controls and sources
-
-Each ROM has a matching file under controls/. These show physical keyboard keys
-for this emulator. The first six non-comment lines are displayed in Debug Mode.
-Source hashes and control evidence are recorded in # comments. Existing Pong.txt
-and tetris.txt were preserved. Missing details were checked against ROM instructions;
-in particular, 15puzzle selects board positions, Puzzle moves the gap, and Tank
-has reversed vertical keys compared with the usual 2/8 mapping.
-
-Authors and catalogued platforms below come from the
-[CHIP-8 database](https://raw.githubusercontent.com/chip-8/chip-8-database/master/database/programs.json). Some entries are demonstrations rather than games.
+Platform labels below are catalogue metadata, not claims of full emulator support.
 
 | ROM | Author | Catalogued platform | SHA-1 |
 | --- | --- | --- | --- |
